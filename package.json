@@ -1,6 +1,6 @@
 {
   "name": "speex-resampler",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An implementation of Speex audio resampler on NodeJS with N-API",
   "main": "src/index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "test": "node src/test.js",
     "prebuild": "prebuild -t 3 -r napi --backend cmake-js",
     "prebuild-publish": "prebuild -t 3 -r napi --backend cmake-js -u" ,
-    "install": "prebuild-install --verbose || npm run build"
+    "install": "prebuild-install -r napi --verbose || npm run build"
   },
   "author": "Guillaume Besson <guillaume@besson.co>",
   "repository": "https://github.com/geekuillaume/node-speex-resampler",

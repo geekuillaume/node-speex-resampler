@@ -1,0 +1,4 @@
+resources/*
+build/*
+prebuilds/*
+.vscode
