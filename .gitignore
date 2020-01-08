@@ -1,0 +1,5 @@
+build
+prebuilds
+resources/*_output.pcm
+node_modules
+.vscode
