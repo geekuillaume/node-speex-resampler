@@ -3,6 +3,7 @@
   "version": "1.0.2",
   "description": "An implementation of Speex audio resampler on NodeJS with N-API",
   "main": "src/index.js",
+	"types": "src/index.d.ts",
   "scripts": {
     "build": "cmake-js compile",
     "test": "node src/test.js",
