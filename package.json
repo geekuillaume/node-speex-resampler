@@ -8,7 +8,7 @@
     "build": "cmake-js compile",
     "test": "node src/test.js",
     "build:debug": "cmake-js compile -D",
-    "prebuild": "prebuild -t 3 -r napi --backend cmake-js",
+    "upload-release": "prebuild -t 3 -r napi --backend cmake-js",
     "install": "prebuild-install -r napi || npm run build"
   },
   "author": "Guillaume Besson <guillaume@besson.co>",
