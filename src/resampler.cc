@@ -1,28 +1,14 @@
 #include <napi.h>
+// #include <iostream>
 #include "../deps/speex/speex_resampler.h"
 #include "resampler.hh"
 
-Napi::FunctionReference SpeexResampler::constructor;
-
-Napi::Object SpeexResampler::Init(Napi::Env env, Napi::Object exports) {
-  Napi::HandleScope scope(env);
-
-  Napi::Function func = DefineClass(
-      env, "SpeexResampler", {
-        InstanceMethod("processChunk", &SpeexResampler::ProcessChunk)
-  });
-
-  constructor = Napi::Persistent(func);
-  constructor.SuppressDestruct();
-
-  exports.Set("SpeexResampler", func);
-  return exports;
+void finalizeResampler(Napi::Env env, SpeexResamplerState *state) {
+  speex_resampler_destroy(state);
 }
 
-SpeexResampler::SpeexResampler(const Napi::CallbackInfo& info)
-    : Napi::ObjectWrap<SpeexResampler>(info) {
+Napi::Value createResampler(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
-  Napi::HandleScope scope(env);
 
   int err = 0;
   int quality = 7;
@@ -34,17 +20,17 @@ SpeexResampler::SpeexResampler(const Napi::CallbackInfo& info)
   if (!info[0].IsNumber() || info[0].As<Napi::Number>().Int32Value() < 1) {
     throw Napi::Error::New(env, "First argument channels should be a number greater or equal to 1");
   }
-  this->channels = info[0].As<Napi::Number>().Int32Value();
+  int channels = info[0].As<Napi::Number>().Int32Value();
 
   if (!info[1].IsNumber() || info[1].As<Napi::Number>().Int32Value() < 1) {
     throw Napi::Error::New(env, "Second argument inRate should be a number greater or equal to 1");
   }
-  this->inRate = info[1].As<Napi::Number>().Int32Value();
+  int inRate = info[1].As<Napi::Number>().Int32Value();
 
   if (!info[2].IsNumber() || info[2].As<Napi::Number>().Int32Value() < 1) {
     throw Napi::Error::New(env, "Third argument outRate should be a number greater or equal to 1");
   }
-  this->outRate = info[2].As<Napi::Number>().Int32Value();
+  int outRate = info[2].As<Napi::Number>().Int32Value();
 
   if (info.Length() == 4 && !info[4].IsUndefined()) {
     if (!info[3].IsNumber() || info[3].As<Napi::Number>().Int32Value() < 1 || info[3].As<Napi::Number>().Int32Value() > 10) {
@@ -53,42 +39,50 @@ SpeexResampler::SpeexResampler(const Napi::CallbackInfo& info)
     quality = info[3].As<Napi::Number>().Int32Value();
   }
 
-  this->resampler = speex_resampler_init(this->channels, this->inRate, this->outRate, quality, &err);
+  SpeexResamplerState *resampler = speex_resampler_init(channels, inRate, outRate, quality, &err);
   if (err != 0) {
     throw Napi::Error::New(env, "Error while initializing speex");
   }
-};
 
-SpeexResampler::~SpeexResampler() {
-  speex_resampler_destroy(this->resampler);
+  return Napi::External<SpeexResamplerState>::New(env, resampler, finalizeResampler);
 }
 
-Napi::Value SpeexResampler::ProcessChunk(const Napi::CallbackInfo& info) {
+Napi::Value resampleChunk(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
-  if (info.Length() != 1 || !info[0].IsBuffer()) {
-    throw Napi::Error::New(env, "One argument required of type Buffer representing interleaved 16bits PCM data");
+  if (info.Length() != 4 || !info[1].IsBuffer() || !info[2].IsNumber() || !info[3].IsFunction()) {
+    throw Napi::Error::New(env, "Should get 4 arguments: resamplerInstance, chunk, channels and callback");
   }
 
-  Napi::Buffer<int16_t> inBuffer = info[0].As<Napi::Buffer<int16_t>>();
+  SpeexResamplerState *resampler = info[0].As<Napi::External<SpeexResamplerState>>().Data();
+  Napi::Buffer<int16_t> inBuffer = info[1].As<Napi::Buffer<int16_t>>();
+  uint32_t inRate;
+  uint32_t outRate;
+  int channels = info[2].As<Napi::Number>().Int32Value();
 
-  uint32_t inSize = inBuffer.Length() / this->channels; // this is the number of samples per channel
-  uint32_t outSize = ((this->outRate * inBuffer.Length()) / this->inRate); // this is the number of bytes that can be written
+  speex_resampler_get_rate(resampler, &inRate, &outRate);
 
-  Napi::Promise::Deferred deferred = Napi::Promise::Deferred::New(env);
+  uint32_t inSamples = inBuffer.Length() / channels; // this is the number of samples per channel
+  uint32_t outSize = ((outRate * inBuffer.Length()) / inRate); // this is the number of bytes that can be written
 
-  ResamplerWorker *worker = new ResamplerWorker(deferred, this->resampler, inBuffer, inSize, outSize);
+  Napi::Function callback = info[3].As<Napi::Function>();
+
+  ResamplerWorker* worker = new ResamplerWorker(callback, resampler, inBuffer, inSamples, outSize);
 
   worker->Queue();
 
-  return deferred.Promise();
+  return env.Undefined();
 }
 
-ResamplerWorker::ResamplerWorker(Napi::Promise::Deferred const &deferred, SpeexResamplerState *resampler, Napi::Buffer<int16_t> inBuffer, uint32_t inSize, uint32_t outSize)
-: PromiseWorker(deferred),
-  resampler(resampler),
+ResamplerWorker::ResamplerWorker(Napi::Function& callback,
+  SpeexResamplerState *resampler,
+  Napi::Buffer<int16_t> inBuffer,
+  uint32_t inSamples,
+  uint32_t outSize)
+: AsyncWorker(callback),
   inBuffer(inBuffer),
-  inSize(inSize),
+  resampler(resampler),
+  inSamples(inSamples),
   outSize(outSize)
 {
   this->outBuffer = new int16_t[this->outSize];
@@ -99,11 +93,11 @@ ResamplerWorker::~ResamplerWorker() {
 }
 
 void ResamplerWorker::Execute() {
-  uint32_t size = this->outSize;
+  uint32_t size = this->outSize / 2;
   int err = speex_resampler_process_interleaved_int(
     this->resampler,
     this->inBuffer.Data(),
-    &inSize,
+    &inSamples,
     this->outBuffer,
     &size
   );
@@ -113,12 +107,23 @@ void ResamplerWorker::Execute() {
   }
 }
 
-void ResamplerWorker::Resolve(Napi::Promise::Deferred const &deferred) {
-  deferred.Resolve(Napi::Buffer<int16_t>::Copy(deferred.Env(), this->outBuffer, this->outSize));
+void ResamplerWorker::OnOK() {
+  Napi::HandleScope scope(this->Env());
+
+  this->Callback().Call({
+    this->Env().Null(),
+    Napi::Buffer<int16_t>::Copy(
+      this->Env(),
+      this->outBuffer,
+      this->outSize
+    )
+  });
 }
 
 Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
-  return SpeexResampler::Init(env, exports);
+  exports.Set(Napi::String::New(env, "createResampler"), Napi::Function::New(env, createResampler));
+  exports.Set(Napi::String::New(env, "resampleChunk"), Napi::Function::New(env, resampleChunk));
+  return exports;
 }
 
 NODE_API_MODULE(speex, InitAll)

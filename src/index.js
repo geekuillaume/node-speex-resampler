@@ -1,5 +1,27 @@
 const { Transform } = require('stream');
-const SpeexResampler = require('bindings')('speex-resampler').SpeexResampler;
+const nativeSpeex = require('bindings')('speex-resampler');
+
+class SpeexResampler {
+  constructor(channels, inRate, outRate, quality) {
+    this._channels = channels;
+    this._resampler = nativeSpeex.createResampler(channels, inRate, outRate, quality);
+  }
+
+  processChunk(chunk) {
+    // We check that we have as many chunks for each channel and that the last chunk is full (2 bytes)
+    if (chunk.length % (this._channels * 2) !== 0) {
+      throw new Error('Chunk length should be a multiple of channels * 2 bytes');
+    }
+    return new Promise((resolve, reject) => {
+      nativeSpeex.resampleChunk(this._resampler, chunk, this._channels, (err, buf) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(buf);
+      })
+    });
+  }
+}
 
 class SpeexResamplerTransform extends Transform {
   constructor(channels, inRate, outRate, quality = 7) {
