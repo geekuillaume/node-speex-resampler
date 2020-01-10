@@ -24,7 +24,7 @@ class SpeexResamplerTransform extends Transform {
     const extraneousBytesCount = chunkToProcess.length % (this.channels * 2);
     if (extraneousBytesCount !== 0) {
       chunkToProcess.copy(this._alignementBuffer, 0, extraneousBytesCount);
-      chunkToProcess.subarray(0, chunkToProcess.length - extraneousBytesCount);
+      chunkToProcess = chunkToProcess.subarray(0, chunkToProcess.length - extraneousBytesCount);
       this._alignementBufferLength = extraneousBytesCount;
     }
     try {
