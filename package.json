@@ -1,12 +1,13 @@
 {
   "name": "speex-resampler",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "An implementation of Speex audio resampler on NodeJS with N-API",
   "main": "src/index.js",
 	"types": "src/index.d.ts",
   "scripts": {
     "build": "cmake-js compile",
     "test": "node src/test.js",
+    "build:debug": "cmake-js compile -D",
     "prebuild": "prebuild -t 3 -r napi --backend cmake-js",
     "install": "prebuild-install -r napi || npm run build"
   },
