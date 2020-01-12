@@ -67,7 +67,7 @@ Napi::Value resampleChunk(const Napi::CallbackInfo& info) {
 
   Napi::Function callback = info[3].As<Napi::Function>();
 
-  ResamplerWorker* worker = new ResamplerWorker(callback, resampler, inBuffer, inSamples, outSize);
+  ResamplerWorker* worker = new ResamplerWorker(callback, resampler, channels, inBuffer, inSamples, outSize);
 
   worker->Queue();
 
@@ -76,10 +76,12 @@ Napi::Value resampleChunk(const Napi::CallbackInfo& info) {
 
 ResamplerWorker::ResamplerWorker(Napi::Function& callback,
   SpeexResamplerState *resampler,
+  int channels,
   Napi::Buffer<int16_t> inBuffer,
   uint32_t inSamples,
   uint32_t outSize)
 : AsyncWorker(callback),
+  channels(channels),
   inBuffer(inBuffer),
   resampler(resampler),
   inSamples(inSamples),
@@ -93,7 +95,8 @@ ResamplerWorker::~ResamplerWorker() {
 }
 
 void ResamplerWorker::Execute() {
-  uint32_t size = this->outSize / 2;
+  uint32_t size = this->outSize / this->channels;
+
   int err = speex_resampler_process_interleaved_int(
     this->resampler,
     this->inBuffer.Data(),
@@ -105,6 +108,8 @@ void ResamplerWorker::Execute() {
   if (err != 0) {
     Napi::AsyncWorker::SetError("Unknown error while parsing chunk");
   }
+
+  this->outSize = size;
 }
 
 void ResamplerWorker::OnOK() {
@@ -115,7 +120,7 @@ void ResamplerWorker::OnOK() {
     Napi::Buffer<int16_t>::Copy(
       this->Env(),
       this->outBuffer,
-      this->outSize
+      this->outSize * this->channels
     )
   });
 }

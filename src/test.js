@@ -1,5 +1,5 @@
 const {readFileSync, writeFileSync,createReadStream} = require('fs');
-const {promisify} = require('util');
+// const {promisify} = require('util');
 const {performance} = require('perf_hooks')
 const path = require('path');
 
@@ -35,10 +35,11 @@ const promiseBasedTest = async () => {
     console.log(`Input stream: ${pcmData.length} bytes, ${pcmData.length / audioTest.inRate / 2 / audioTest.channels}s`);
     console.log(`Output stream: ${res.length} bytes, ${res.length / audioTest.outRate / 2 / audioTest.channels}s`);
 
-    const outputSizeTarget = (pcmData.length * audioTest.outRate) / audioTest.inRate;
-    assert(Math.abs(outputSizeTarget - res.length) < 2, `File size not matching target, ${res.length} != ${outputSizeTarget}`);
+    const inputDuration = pcmData.length / audioTest.inRate / 2 / audioTest.channels;
+    const outputDuration = res.length / audioTest.outRate / 2 / audioTest.channels;
+    assert(Math.abs(inputDuration - outputDuration) < 0.01, `Stream duration not matching target, in: ${inputDuration}s != out:${outputDuration}`);
     console.log();
-    writeFileSync(path.resolve(__dirname, `../resources/${filename}_${audioTest.outRate}_${audioTest.quality || 7}_output.pcm`), res);
+    // writeFileSync(path.resolve(__dirname, `../resources/${filename}_${audioTest.outRate}_${audioTest.quality || 7}_output.pcm`), res);
   }
 }
 
@@ -68,8 +69,9 @@ const streamBasedTest = async () => {
     console.log(`Input stream: ${pcmData.length} bytes, ${pcmData.length / audioTest.inRate / 2 / audioTest.channels}s`);
     console.log(`Output stream: ${res.length} bytes, ${res.length / audioTest.outRate / 2 / audioTest.channels}s`);
 
-    const outputSizeTarget = (pcmData.length * audioTest.outRate) / audioTest.inRate;
-    assert(Math.abs(1 - (outputSizeTarget / res.length)) < 0.01, `File size not matching target, ${res.length} != ${outputSizeTarget}`);
+    const inputDuration = pcmData.length / audioTest.inRate / 2 / audioTest.channels;
+    const outputDuration = res.length / audioTest.outRate / 2 / audioTest.channels;
+    assert(Math.abs(inputDuration - outputDuration) < 0.01, `Stream duration not matching target, in: ${inputDuration}s != out:${outputDuration}`);
     console.log();
   }
 }

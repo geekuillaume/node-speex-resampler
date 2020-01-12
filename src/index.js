@@ -50,7 +50,7 @@ class SpeexResamplerTransform extends Transform {
       this._alignementBufferLength = extraneousBytesCount;
     }
     try {
-      const res = await this.resampler.processChunk(chunk);
+      const res = await this.resampler.processChunk(chunkToProcess);
       callback(null, res);
     } catch (e) {
       callback(e);
