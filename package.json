@@ -8,7 +8,8 @@
     "build": "cmake-js compile",
     "test": "node src/test.js",
     "build:debug": "cmake-js compile -D",
-    "build:release": "bash scripts/cross-build.sh",
+    "build:release": "prebuild -t 3 -r napi --backend cmake-js",
+    "build:all-releases": "bash scripts/cross-build.sh",
     "upload-all": "prebuild --upload-all $GITHUB_TOKEN",
     "install": "prebuild-install -r napi || npm run build"
   },

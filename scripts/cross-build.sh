@@ -3,8 +3,8 @@ set -x
 
 archs=(linux-arm64 linux-armv7 linux-x64)
 
-mkdir -p ../prebuilds_tmp
 cd scripts
+mkdir -p ../prebuilds_tmp
 for arch in "${archs[@]}"
 do
 	echo "$arch "
@@ -13,7 +13,7 @@ do
   docker run --rm nodejs-cross-build-$arch > ./dockcross
   chmod +x ./dockcross
   cd ../
-  ./scripts/dockcross bash -c "npm run upload-release"
+  ./scripts/dockcross bash -c "npm run build:release"
   cd prebuilds
   for file in `ls`
   do
