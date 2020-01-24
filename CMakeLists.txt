@@ -36,4 +36,3 @@ if( ${CMAKE_TARGET_ARCHITECTURES} STREQUAL "x86_64" )
   add_compile_definitions(USE_SSE2=true)
 endif()
 
-# `
