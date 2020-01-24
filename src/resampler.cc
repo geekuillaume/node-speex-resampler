@@ -62,8 +62,10 @@ Napi::Value resampleChunk(const Napi::CallbackInfo& info) {
 
   speex_resampler_get_rate(resampler, &inRate, &outRate);
 
-  uint32_t inSamples = inBuffer.Length() / channels; // this is the number of samples per channel
-  uint32_t outSize = ((outRate * inBuffer.Length()) / inRate); // this is the number of bytes that can be written
+  uint64_t inBufferLength = inBuffer.Length();
+  uint64_t outSize = ((outRate * inBufferLength) / inRate); // this is the number of bytes that can be written
+
+  uint32_t inSamples = inBufferLength / channels; // this is the number of samples per channel
 
   Napi::Function callback = info[3].As<Napi::Function>();
 
@@ -95,22 +97,39 @@ ResamplerWorker::~ResamplerWorker() {
 }
 
 void ResamplerWorker::Execute() {
-  uint32_t size = this->outSize / this->channels;
+  uint32_t outSizePerChannel = this->outSize / this->channels;
+  uint32_t processedSamples = 0;
+  uint32_t writtenSamples = 0;
 
-  int err = speex_resampler_process_interleaved_int(
-    this->resampler,
-    this->inBuffer.Data(),
-    &inSamples,
-    this->outBuffer,
-    &size
-  );
+  // std::cout << "out size per channel " << outSizePerChannel << "\n";
+  // std::cout << "inSamples " << this->inSamples << "\n";
+  while (processedSamples < this->inSamples) {
+    uint32_t remainingSamples = this->inSamples - processedSamples;
+    uint32_t outputSizePerChannelAvailable = outSizePerChannel - (writtenSamples * this->channels);
 
-  if (err != 0) {
-    Napi::AsyncWorker::SetError("Unknown error while parsing chunk");
+    // std::cout << "remainingSamples " << remainingSamples << "\n";
+    // std::cout << "outputSizePerChannelAvailable " << outputSizePerChannelAvailable << "\n";
+
+    int err = speex_resampler_process_interleaved_int(
+      this->resampler,
+      this->inBuffer.Data() + (processedSamples * this->channels),
+      &remainingSamples,
+      this->outBuffer + (writtenSamples * this->channels),
+      &outputSizePerChannelAvailable
+    );
+    if (err != 0) {
+      Napi::AsyncWorker::SetError("Unknown error while parsing chunk");
+    }
+
+    processedSamples += remainingSamples;
+    writtenSamples += outputSizePerChannelAvailable;
+    // std::cout << "processedSamples " << processedSamples << "\n";
+    // std::cout << "writtenSamples " << writtenSamples << "\n";
   }
 
-  this->outSize = size;
+  this->outSize = writtenSamples * this->channels;
 }
+
 
 void ResamplerWorker::OnOK() {
   Napi::HandleScope scope(this->Env());
@@ -120,7 +139,7 @@ void ResamplerWorker::OnOK() {
     Napi::Buffer<int16_t>::Copy(
       this->Env(),
       this->outBuffer,
-      this->outSize * this->channels
+      this->outSize
     )
   });
 }
