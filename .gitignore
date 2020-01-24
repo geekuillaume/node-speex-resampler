@@ -7,3 +7,4 @@ CMakeCache.txt
 cmake_install.cmake
 CMakeFiles
 scripts/dockcross*
+.envrc
