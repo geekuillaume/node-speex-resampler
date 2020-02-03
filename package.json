@@ -1,6 +1,6 @@
 {
   "name": "speex-resampler",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "An implementation of Speex audio resampler on NodeJS with N-API",
   "main": "src/index.js",
   "types": "src/index.d.ts",
