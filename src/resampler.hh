@@ -13,7 +13,6 @@ class ResamplerWorker : public Napi::AsyncWorker {
       SpeexResamplerState *resampler,
       int channels,
       Napi::Buffer<int16_t> inBuffer,
-      uint32_t inSamples,
       uint32_t outSize
     );
     ~ResamplerWorker();
@@ -26,7 +25,6 @@ class ResamplerWorker : public Napi::AsyncWorker {
     Napi::Buffer<int16_t> inBuffer;
     int16_t *outBuffer;
     uint32_t outSize;
-    uint32_t inSamples;
     int channels;
 };
 

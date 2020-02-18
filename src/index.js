@@ -5,15 +5,21 @@ class SpeexResampler {
   constructor(channels, inRate, outRate, quality) {
     this._channels = channels;
     this._resampler = nativeSpeex.createResampler(channels, inRate, outRate, quality);
+    this._processing = false;
   }
 
   processChunk(chunk) {
+    if (this._processing) {
+      throw new Error('You can only process one chunk at a time, do not parallelize this function');
+    }
+    this._processing = true;
     // We check that we have as many chunks for each channel and that the last chunk is full (2 bytes)
     if (chunk.length % (this._channels * 2) !== 0) {
       throw new Error('Chunk length should be a multiple of channels * 2 bytes');
     }
     return new Promise((resolve, reject) => {
       nativeSpeex.resampleChunk(this._resampler, chunk, this._channels, (err, buf) => {
+        this._processing = false;
         if (err) {
           return reject(err);
         }

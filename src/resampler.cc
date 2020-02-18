@@ -1,5 +1,5 @@
 #include <napi.h>
-// #include <iostream>
+#include <iostream>
 #include "../deps/speex/speex_resampler.h"
 #include "resampler.hh"
 
@@ -69,7 +69,7 @@ Napi::Value resampleChunk(const Napi::CallbackInfo& info) {
 
   Napi::Function callback = info[3].As<Napi::Function>();
 
-  ResamplerWorker* worker = new ResamplerWorker(callback, resampler, channels, inBuffer, inSamples, outSize);
+  ResamplerWorker* worker = new ResamplerWorker(callback, resampler, channels, inBuffer, outSize);
 
   worker->Queue();
 
@@ -80,13 +80,11 @@ ResamplerWorker::ResamplerWorker(Napi::Function& callback,
   SpeexResamplerState *resampler,
   int channels,
   Napi::Buffer<int16_t> inBuffer,
-  uint32_t inSamples,
   uint32_t outSize)
 : AsyncWorker(callback),
   channels(channels),
   inBuffer(inBuffer),
   resampler(resampler),
-  inSamples(inSamples),
   outSize(outSize)
 {
   this->outBuffer = new int16_t[this->outSize];
@@ -97,37 +95,29 @@ ResamplerWorker::~ResamplerWorker() {
 }
 
 void ResamplerWorker::Execute() {
-  uint32_t outSizePerChannel = this->outSize / this->channels;
-  uint32_t processedSamples = 0;
-  uint32_t writtenSamples = 0;
+  uint32_t inLen = this->inBuffer.Length() / this->channels; // number of samples (16 bits) per channel
+  uint32_t outLen = this->outSize / this->channels; // size in byte of the output buffer per channel
 
-  // std::cout << "out size per channel " << outSizePerChannel << "\n";
-  // std::cout << "inSamples " << this->inSamples << "\n";
-  while (processedSamples < this->inSamples) {
-    uint32_t remainingSamples = this->inSamples - processedSamples;
-    uint32_t outputSizePerChannelAvailable = outSizePerChannel - (writtenSamples * this->channels);
+  // std::cout << "inLen " << inLen << "\n";
+  // std::cout << "outLen " << outLen << "\n";
 
-    // std::cout << "remainingSamples " << remainingSamples << "\n";
-    // std::cout << "outputSizePerChannelAvailable " << outputSizePerChannelAvailable << "\n";
+  int err = speex_resampler_process_interleaved_int(
+    this->resampler,
+    this->inBuffer.Data(),
+    &inLen,
+    this->outBuffer,
+    &outLen
+  );
 
-    int err = speex_resampler_process_interleaved_int(
-      this->resampler,
-      this->inBuffer.Data() + (processedSamples * this->channels),
-      &remainingSamples,
-      this->outBuffer + (writtenSamples * this->channels),
-      &outputSizePerChannelAvailable
-    );
-    if (err != 0) {
-      Napi::AsyncWorker::SetError("Unknown error while parsing chunk");
-    }
-
-    processedSamples += remainingSamples;
-    writtenSamples += outputSizePerChannelAvailable;
-    // std::cout << "processedSamples " << processedSamples << "\n";
-    // std::cout << "writtenSamples " << writtenSamples << "\n";
+  if (err != 0) {
+    Napi::AsyncWorker::SetError("Unknown error while parsing chunk");
   }
 
-  this->outSize = writtenSamples * this->channels;
+  // std::cout << "after inLen " << inLen << "\n";
+  // std::cout << "after outLen " << outLen << "\n";
+
+  // outLen is the number of samples written (2 bytes) per channel
+  this->outSize = (outLen * this->channels);
 }
 
 
