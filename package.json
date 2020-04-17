@@ -12,8 +12,8 @@
     "install": "prebuild-install -r napi --target 3 || npm run build",
     "build-binaries": "prebuild -r napi -t 3 --backend cmake-js --verbose",
     "build-and-upload": "run-script-os",
-    "build-and-upload:default": "prebuild -r napi -t 4 --backend cmake-js --verbose -u $GITHUB_TOKEN",
-    "build-and-upload:win32": "prebuild -r napi -t 4 --backend cmake-js --verbose -u %GITHUB_TOKEN%"
+    "build-and-upload:default": "prebuild -r napi -t 3 --backend cmake-js --verbose -u $GITHUB_TOKEN",
+    "build-and-upload:win32": "prebuild -r napi -t 3 --backend cmake-js --verbose -u %GITHUB_TOKEN%"
   },
   "author": "Guillaume Besson <guillaume@besson.co>",
   "repository": "https://github.com/geekuillaume/node-speex-resampler",
