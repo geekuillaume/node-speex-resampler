@@ -32,7 +32,8 @@
     "cmake-js": "^6.0.0",
     "node-addon-api": "^2.0.0",
     "np": "^6.2.1",
-    "prebuild": "^10.0.0"
+    "prebuild": "^10.0.0",
+    "run-script-os": "^1.1.1"
   },
   "binary": {
     "napi_versions": [

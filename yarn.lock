@@ -2676,6 +2676,11 @@ run-async@^2.2.0, run-async@^2.4.0:
   dependencies:
     is-promise "^2.1.0"
 
+run-script-os@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/run-script-os/-/run-script-os-1.1.1.tgz#4b4c5fd212b52fe8d9a1bca23f118764ee423c6c"
+  integrity sha512-tM3mfchUIpo9WOFioO3eO/lTgRbtqcqBmSkkqfkjXmxn7vvhwykOXxOOKIXFP+ZConvLsS5KskM3yX+XBfDD4g==
+
 run-waterfall@^1.1.6:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/run-waterfall/-/run-waterfall-1.1.6.tgz#3aebfeb60155539bf1ff4a30b66706ae77df9f74"
