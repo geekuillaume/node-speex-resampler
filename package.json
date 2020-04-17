@@ -7,7 +7,7 @@
   "scripts": {
     "build": "cmake-js compile",
     "build:debug": "cmake-js compile -D",
-		"deploy": "np --no-tests",
+    "deploy": "np --no-tests",
     "test": "node src/test.js",
     "install": "prebuild-install -r napi --target 3 || npm run build",
     "build-binaries": "prebuild -r napi -t 3 --backend cmake-js --verbose",
@@ -31,6 +31,7 @@
   "devDependencies": {
     "cmake-js": "^6.0.0",
     "node-addon-api": "^2.0.0",
+    "np": "^6.2.1",
     "prebuild": "^10.0.0"
   },
   "binary": {
