@@ -6,12 +6,14 @@
   "types": "src/index.d.ts",
   "scripts": {
     "build": "cmake-js compile",
-    "test": "node src/test.js",
     "build:debug": "cmake-js compile -D",
-    "build:release": "prebuild -t 3 -r napi --backend cmake-js",
-    "build:all-releases": "bash scripts/cross-build.sh",
-    "upload-all": "prebuild --upload-all $GITHUB_TOKEN",
-    "install": "prebuild-install -r napi || npm run build"
+		"deploy": "np --no-tests",
+    "test": "node src/test.js",
+    "install": "prebuild-install -r napi --target 3 || npm run build",
+    "build-binaries": "prebuild -r napi -t 3 --backend cmake-js --verbose",
+    "build-and-upload": "run-script-os",
+    "build-and-upload:default": "prebuild -r napi -t 4 --backend cmake-js --verbose -u $GITHUB_TOKEN",
+    "build-and-upload:win32": "prebuild -r napi -t 4 --backend cmake-js --verbose -u %GITHUB_TOKEN%"
   },
   "author": "Guillaume Besson <guillaume@besson.co>",
   "repository": "https://github.com/geekuillaume/node-speex-resampler",

@@ -1,5 +1,0 @@
-FROM dockcross/_ARCH_
-
-ENV DEFAULT_DOCKCROSS_IMAGE nodejs-cross-build-_ARCH_
-RUN curl -sL https://deb.nodesource.com/setup_13.x | bash -
-RUN apt-get install -y nodejs

@@ -1,0 +1,53 @@
+name: Build
+
+on: push
+
+jobs:
+  prebuild-lib:
+    name: Prebuild lib
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        # - macos-latest
+        # - windows-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+
+      - name: Install deps
+        shell: bash
+        run: yarn
+
+      - name: Build
+        run: yarn build-binaries
+
+  prebuild-lib-armv7:
+    name: Prebuild lib ARMv7
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v1
+
+    - name: Build for armv7
+      run: ./scripts/build_for_arch.sh --no-upload
+
+  prebuild-lib-arm64v8:
+    name: Prebuild lib arm64v8
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out Git repository
+      uses: actions/checkout@v1
+
+    - name: Build for arm64v8
+      env:
+        CROSS_ENV: arm64v8
+      run: ./scripts/build_for_arch.sh --no-upload
