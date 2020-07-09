@@ -1,9 +1,9 @@
-const {readFileSync, writeFileSync,createReadStream} = require('fs');
+import {readFileSync, writeFileSync,createReadStream} from 'fs';
 // const {promisify} = require('util');
-const {performance} = require('perf_hooks')
-const path = require('path');
+import { performance } from 'perf_hooks'
+import path from 'path';
 
-const SpeexResampler = require('./index');
+import SpeexResampler, {SpeexResamplerTransform} from './index';
 
 const assert = (condition, message) => {
   if (!condition) {
@@ -51,14 +51,14 @@ const streamBasedTest = async () => {
   for (const audioTest of audioTests) {
     console.log(`Resampling file ${audioTest.inFile} with ${audioTest.channels} channel(s) from ${audioTest.inRate}Hz to ${audioTest.outRate}Hz (quality: ${audioTest.quality || 7})`);
     const readFileStream = createReadStream(audioTest.inFile);
-    const transformStream = new SpeexResampler.TransformStream(audioTest.channels, audioTest.inRate, audioTest.outRate, audioTest.quality);
+    const transformStream = new SpeexResamplerTransform(audioTest.channels, audioTest.inRate, audioTest.outRate, audioTest.quality);
     let pcmData = Buffer.alloc(0);
     readFileStream.on('data', (d) => {
-      pcmData = Buffer.concat([ pcmData, d ]);
+      pcmData = Buffer.concat([ pcmData, d as Buffer ]);
     });
     let res = Buffer.alloc(0);
     transformStream.on('data', (d) => {
-      res = Buffer.concat([ res, d ]);
+      res = Buffer.concat([ res, d as Buffer ]);
     });
 
     const start = performance.now();
@@ -76,7 +76,8 @@ const streamBasedTest = async () => {
   }
 }
 
-promiseBasedTest().then(() => streamBasedTest()).catch((e) => {
+promiseBasedTest()
+.then(() => streamBasedTest()).catch((e) => {
   console.error(e);
   process.exit(1);
 })

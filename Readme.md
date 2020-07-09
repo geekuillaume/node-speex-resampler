@@ -1,6 +1,6 @@
 # Speex Resampler
 
-This lib exposes the [Speex resampler](https://speex.org/docs/manual/speex-manual/node7.html) to NodeJS. It uses N-API, cmake and node-addon-api.
+This lib exposes the [Speex resampler](https://speex.org/docs/manual/speex-manual/node7.html) to Javascript with WebAssembly. It doesn't have any dependancy and support NodeJS or a WebContext. Typescript typings are also provided.
 
 From speex creator, the design goals of the resampler are:
 - Very fast algorithm
@@ -29,6 +29,6 @@ const res = await resampler.processChunk(pcmData);
 // res is also a buffer with interleaved signed 16 bits PCM data
 ```
 
-You can look at the `src/test.js` for more information.
+You can look at the `src/test.ts` for more information.
 
 Test music by https://www.bensound.com

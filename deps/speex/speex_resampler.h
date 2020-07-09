@@ -47,7 +47,7 @@
    there won't be any clash if linking with Speex later on. */
 
 /* #define RANDOM_PREFIX your software name here */
-#define RANDOM_PREFIX node_speex_resampler
+#define RANDOM_PREFIX speex
 #ifndef RANDOM_PREFIX
 #error "Please define RANDOM_PREFIX (above) to something specific to your project to prevent symbol name clashes"
 #endif
