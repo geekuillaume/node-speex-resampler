@@ -5,3 +5,4 @@ prebuilds/*
 .github
 deps
 scripts
+.envrc
