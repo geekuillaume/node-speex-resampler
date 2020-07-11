@@ -34,7 +34,6 @@ export declare class SpeexResamplerTransform extends Transform {
     quality: number;
     resampler: SpeexResampler;
     _alignementBuffer: Buffer;
-    _alignementBufferLength: number;
     /**
       * Create an SpeexResampler instance.
       * @param channels Number of channels, minimum is 1, no maximum

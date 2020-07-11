@@ -51,7 +51,7 @@ class SpeexResampler {
       throw new Error('You can only process one chunk at a time, do not parallelize this function');
     }
     // We check that we have as many chunks for each channel and that the last chunk is full (2 bytes)
-    if (chunk.length % (this.channels * 2) !== 0) {
+    if (chunk.length % (this.channels * Uint16Array.BYTES_PER_ELEMENT) !== 0) {
       throw new Error('Chunk length should be a multiple of channels * 2 bytes');
     }
 
@@ -118,10 +118,11 @@ class SpeexResampler {
   }
 }
 
+const EMPTY_BUFFER = Buffer.alloc(0);
+
 export class SpeexResamplerTransform extends Transform {
   resampler: SpeexResampler;
   _alignementBuffer: Buffer;
-  _alignementBufferLength: number;
 
   /**
     * Create an SpeexResampler instance.
@@ -134,26 +135,24 @@ export class SpeexResamplerTransform extends Transform {
     super();
     this.resampler = new SpeexResampler(channels, inRate, outRate, quality);
     this.channels = channels;
-    this._alignementBuffer = Buffer.alloc(this.channels * 2);
-    this._alignementBufferLength = 0;
+    this._alignementBuffer = EMPTY_BUFFER;
   }
 
   async _transform(chunk, encoding, callback) {
-    let chunkToProcess = chunk;
-    if (this._alignementBufferLength > 0) {
+    let chunkToProcess: Buffer = chunk;
+    if (this._alignementBuffer.length > 0) {
       chunkToProcess = Buffer.concat([
-        this._alignementBuffer.subarray(0, this._alignementBufferLength),
+        this._alignementBuffer,
         chunk,
       ]);
-      this._alignementBufferLength = 0;
+      this._alignementBuffer = EMPTY_BUFFER;
     }
     // Speex needs a buffer aligned to 16bits times the number of channels
     // so we keep the extraneous bytes in a buffer for next chunk
-    const extraneousBytesCount = chunkToProcess.length % (this.channels * 2);
+    const extraneousBytesCount = chunkToProcess.length % (this.channels * Uint16Array.BYTES_PER_ELEMENT);
     if (extraneousBytesCount !== 0) {
-      chunkToProcess.copy(this._alignementBuffer, 0, extraneousBytesCount);
-      chunkToProcess = chunkToProcess.subarray(0, chunkToProcess.length - extraneousBytesCount);
-      this._alignementBufferLength = extraneousBytesCount;
+      this._alignementBuffer = Buffer.from(chunkToProcess.slice(chunkToProcess.length - extraneousBytesCount));
+      chunkToProcess = chunkToProcess.slice(0, chunkToProcess.length - extraneousBytesCount);
     }
     try {
       const res = await this.resampler.processChunk(chunkToProcess);
