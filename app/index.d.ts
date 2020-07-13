@@ -5,7 +5,6 @@ declare class SpeexResampler {
     inRate: any;
     outRate: any;
     quality: number;
-    _processing: boolean;
     _resamplerPtr: number;
     _inBufferPtr: number;
     _inBufferSize: number;
@@ -13,6 +12,7 @@ declare class SpeexResampler {
     _outBufferSize: number;
     _inLengthPtr: number;
     _outLengthPtr: number;
+    static initPromise: Promise<any>;
     /**
       * Create an SpeexResampler tranform stream.
       * @param channels Number of channels, minimum is 1, no maximum
@@ -25,7 +25,7 @@ declare class SpeexResampler {
       * Resample a chunk of audio.
       * @param chunk interleaved PCM data in signed 16bits int
       */
-    processChunk(chunk: Buffer): Promise<Buffer>;
+    processChunk(chunk: Buffer): Buffer;
 }
 export declare class SpeexResamplerTransform extends Transform {
     channels: any;
@@ -42,6 +42,6 @@ export declare class SpeexResamplerTransform extends Transform {
       * @param quality number from 1 to 10, default to 7, 1 is fast but of bad quality, 10 is slow but best quality
       */
     constructor(channels: any, inRate: any, outRate: any, quality?: number);
-    _transform(chunk: any, encoding: any, callback: any): Promise<void>;
+    _transform(chunk: any, encoding: any, callback: any): void;
 }
 export default SpeexResampler;

@@ -19,7 +19,6 @@ let speexModule: EmscriptenModuleOpusEncoder;
 let globalModulePromise = SpeexWasm().then((s) => speexModule = s);
 
 class SpeexResampler {
-  _processing = false;
   _resamplerPtr: number;
   _inBufferPtr = -1;
   _inBufferSize = -1;
@@ -28,6 +27,8 @@ class SpeexResampler {
 
   _inLengthPtr = -1;
   _outLengthPtr = -1;
+
+  static initPromise = globalModulePromise as Promise<any>;
 
   /**
     * Create an SpeexResampler tranform stream.
@@ -46,17 +47,15 @@ class SpeexResampler {
     * Resample a chunk of audio.
     * @param chunk interleaved PCM data in signed 16bits int
     */
-  async processChunk(chunk: Buffer) {
-    if (this._processing) {
-      throw new Error('You can only process one chunk at a time, do not parallelize this function');
+  processChunk(chunk: Buffer) {
+    if (!speexModule) {
+      throw new Error('You need to wait for SpeexResampler.initPromise before calling this method');
     }
     // We check that we have as many chunks for each channel and that the last chunk is full (2 bytes)
     if (chunk.length % (this.channels * Uint16Array.BYTES_PER_ELEMENT) !== 0) {
       throw new Error('Chunk length should be a multiple of channels * 2 bytes');
     }
 
-    this._processing = true;
-    await globalModulePromise;
     if (!this._resamplerPtr) {
       const errPtr = speexModule._malloc(4);
       this._resamplerPtr = speexModule._speex_resampler_init(this.channels, this.inRate, this.outRate, this.quality, errPtr);
@@ -108,7 +107,6 @@ class SpeexResampler {
 
     const outSamplesPerChannelsWritten = speexModule.getValue(this._outLengthPtr, 'i32');
 
-    this._processing = false;
     // we are copying the info in a new buffer here, we could just pass a buffer pointing to the same memory space if needed
     return Buffer.from(
       speexModule.HEAPU8.subarray(
@@ -138,7 +136,7 @@ export class SpeexResamplerTransform extends Transform {
     this._alignementBuffer = EMPTY_BUFFER;
   }
 
-  async _transform(chunk, encoding, callback) {
+  _transform(chunk, encoding, callback) {
     let chunkToProcess: Buffer = chunk;
     if (this._alignementBuffer.length > 0) {
       chunkToProcess = Buffer.concat([
@@ -155,7 +153,7 @@ export class SpeexResamplerTransform extends Transform {
       chunkToProcess = chunkToProcess.slice(0, chunkToProcess.length - extraneousBytesCount);
     }
     try {
-      const res = await this.resampler.processChunk(chunkToProcess);
+      const res = this.resampler.processChunk(chunkToProcess);
       callback(null, res);
     } catch (e) {
       callback(e);
