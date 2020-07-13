@@ -1,6 +1,6 @@
 {
   "name": "speex-resampler",
-  "version": "2.0.2",
+  "version": "3.0.0",
   "description": "An WebAssembly implementation of Speex audio resampler",
   "main": "app/index.js",
   "types": "app/index.d.ts",
