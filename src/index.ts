@@ -109,10 +109,10 @@ class SpeexResampler {
 
     // we are copying the info in a new buffer here, we could just pass a buffer pointing to the same memory space if needed
     return Buffer.from(
-      speexModule.HEAPU8.subarray(
+      speexModule.HEAPU8.slice(
         this._outBufferPtr,
         this._outBufferPtr + outSamplesPerChannelsWritten * this.channels * Uint16Array.BYTES_PER_ELEMENT
-      ));
+      ).buffer);
   }
 }
 
