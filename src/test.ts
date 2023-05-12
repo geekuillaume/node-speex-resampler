@@ -22,6 +22,7 @@ const audioTests = [
 ];
 
 const promiseBasedTest = async () => {
+  await SpeexResampler.initPromise;
   for (const audioTest of audioTests) {
     console.log(`Resampling file ${audioTest.inFile} with ${audioTest.channels} channel(s) from ${audioTest.inRate}Hz to ${audioTest.outRate}Hz (quality: ${audioTest.quality || 7})`);
     const resampler = new SpeexResampler(audioTest.channels, audioTest.inRate, audioTest.outRate, audioTest.quality);
